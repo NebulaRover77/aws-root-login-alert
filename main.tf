@@ -1,7 +1,7 @@
 locals {
   root_console_login_event_pattern = {
     source        = ["aws.signin"]
-    "detail-type" = ["AWS API Call via CloudTrail"]
+    "detail-type" = ["AWS Console Signin via CloudTrail", "AWS API Call via CloudTrail"]
 
     detail = {
       eventSource = ["signin.amazonaws.com"]

@@ -55,6 +55,13 @@ if [ "$actual_account" != "$DEPLOY_ACCOUNT_ID" ]; then
   die "Profile $DEPLOY_PROFILE resolves to account $actual_account, expected $DEPLOY_ACCOUNT_ID"
 fi
 
+if [ -n "${BACKEND_PROFILE:-}" ]; then
+  if ! aws --profile "$BACKEND_PROFILE" sts get-caller-identity >/dev/null 2>&1; then
+    echo "Backend profile $BACKEND_PROFILE is not logged in. Running aws sso login..."
+    aws sso login --profile "$BACKEND_PROFILE"
+  fi
+fi
+
 echo "Checking Terraform backend..."
 terraform init -reconfigure
 
