@@ -8,3 +8,9 @@ variable "name_prefix" {
   type        = string
   default     = "aws-root-login"
 }
+
+variable "create_cloudtrail" {
+  description = "Create a multi-region CloudTrail trail for management events so EventBridge receives root sign-in events"
+  type        = bool
+  default     = true
+}

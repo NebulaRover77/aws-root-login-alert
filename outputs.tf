@@ -12,3 +12,8 @@ output "event_pattern_json" {
   description = "EventBridge event pattern JSON"
   value       = jsonencode(local.root_console_login_event_pattern)
 }
+
+output "cloudtrail_name" {
+  description = "CloudTrail trail name, if created"
+  value       = try(aws_cloudtrail.management_events[0].name, null)
+}
