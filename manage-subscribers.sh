@@ -11,6 +11,8 @@ Usage:
   $0 list
   $0 add email1@example.com [email2@example.com ...]
   $0 remove email1@example.com [email2@example.com ...]
+  $0 add-sms +15551234567 [+15557654321 ...]
+  $0 remove-sms +15551234567 [+15557654321 ...]
 
 Environment:
   AWS_PROFILE   AWS CLI profile to use
@@ -112,6 +114,36 @@ add_email() {
   echo "Confirmation email sent to $email."
 }
 
+add_sms() {
+  local phone="$1"
+
+  echo "Adding SMS subscription: $phone"
+  aws_p sns subscribe \
+    --topic-arn "$TOPIC_ARN" \
+    --protocol sms \
+    --notification-endpoint "$phone" \
+    --output table
+
+  echo "SMS subscription added for $phone."
+}
+
+remove_sms() {
+  local phone="$1"
+
+  sub_arn="$(aws_p sns list-subscriptions-by-topic \
+    --topic-arn "$TOPIC_ARN" \
+    --query "Subscriptions[?Protocol=='sms' && Endpoint=='$phone'].SubscriptionArn | [0]" \
+    --output text 2>/dev/null || true)"
+
+  if [ -z "$sub_arn" ] || [ "$sub_arn" = "None" ]; then
+    echo "No SMS subscription found for $phone"
+    return 0
+  fi
+
+  echo "Removing SMS subscription: $phone"
+  aws_p sns unsubscribe --subscription-arn "$sub_arn"
+}
+
 remove_email() {
   local email="$1"
 
@@ -147,7 +179,7 @@ cmd="${1:-}"
 shift || true
 
 case "$cmd" in
-  list|add|remove)
+  list|add|remove|add-sms|remove-sms)
     ;;
   -h|--help|"")
     usage
@@ -185,6 +217,24 @@ case "$cmd" in
     [ "$#" -gt 0 ] || die "Provide at least one email address to remove."
     for email in "$@"; do
       remove_email "$email"
+    done
+    echo
+    list_subscriptions
+    ;;
+
+  add-sms)
+    [ "$#" -gt 0 ] || die "Provide at least one phone number to add, in E.164 format like +15551234567."
+    for phone in "$@"; do
+      add_sms "$phone"
+    done
+    echo
+    list_subscriptions
+    ;;
+
+  remove-sms)
+    [ "$#" -gt 0 ] || die "Provide at least one phone number to remove, in E.164 format like +15551234567."
+    for phone in "$@"; do
+      remove_sms "$phone"
     done
     echo
     list_subscriptions
