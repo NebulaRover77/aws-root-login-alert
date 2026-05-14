@@ -1,7 +1,7 @@
 locals {
   root_console_login_event_pattern = {
     source        = ["aws.signin"]
-    "detail-type" = ["AWS Console Signin via CloudTrail", "AWS API Call via CloudTrail"]
+    "detail-type" = ["AWS Console Sign In via CloudTrail", "AWS API Call via CloudTrail"]
 
     detail = {
       eventSource = ["signin.amazonaws.com"]
@@ -69,23 +69,22 @@ resource "aws_cloudwatch_event_target" "send_to_sns" {
       eventid = "$.detail.eventID"
     }
 
-    input_template = jsonencode(join("\n", [
-      "AWS ROOT CONSOLE SIGN-IN",
-      "",
-      "The AWS account root user signed in to the console.",
-      "",
-      "Account: <account>",
-      "ARN: <arn>",
-      "Result: <result>",
-      "Time: <time>",
-      "Source IP: <ip>",
-      "MFA used: <mfa>",
-      "CloudTrail region: <region>",
-      "Login target: <login>",
-      "CloudTrail event ID: <eventid>",
-      "",
-      "Review this event unless it corresponds to an expected break-glass action."
-    ]))
+    input_template = <<TEMPLATE
+{
+  "alert": "AWS ROOT CONSOLE SIGN-IN",
+  "message": "The AWS account root user signed in to the console.",
+  "account": <account>,
+  "arn": <arn>,
+  "result": <result>,
+  "time": <time>,
+  "source_ip": <ip>,
+  "mfa_used": <mfa>,
+  "cloudtrail_region": <region>,
+  "login_target": <login>,
+  "cloudtrail_event_id": <eventid>,
+  "recommendation": "Review this event unless it corresponds to an expected break-glass action."
+}
+TEMPLATE
   }
 
   depends_on = [
